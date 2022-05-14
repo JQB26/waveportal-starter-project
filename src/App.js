@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from "react";
+import { ethers } from "ethers";
 import './App.css';
+import abi from "./utils/WavePortal.json";
 
 export default function App() {
 
   const [currentAccount, setCurrentAccount] = useState("");
+
+  const contractAddress = "0x8711839C4b06c1d625Bb662424A5D31D9a8CE7d0";
+  const contractABI = abi.abi;
   
   const checkIfWalletIsConnected = async () => {
     try {
@@ -47,6 +52,35 @@ export default function App() {
     }
   }
 
+  const wave = async () => {
+    try {
+      const { ethereum } = window;
+
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+
+        let count = await wavePortalContract.getTotalWaves();
+        console.log("Retrieved total wave count...", count.toNumber());
+
+        const waveTxn = await wavePortalContract.wave();
+        console.log('Mining...', waveTxn.hash);
+
+        await waveTxn.wait();
+        console.log('Mined -- ', waveTxn.hash);
+
+        count = await wavePortalContract.getTotalWaves();
+        console.log("Retrieved total wave count...", count.toNumber());
+
+      } else {
+        console.log("Ethereum object doesn't exit!");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   useEffect(() => {
     checkIfWalletIsConnected();
   }, []);
@@ -65,7 +99,7 @@ export default function App() {
           Join us and get to the top!
         </div>
 
-        <button className="waveButton" onClick={null}>
+        <button className="waveButton" onClick={wave}>
           Interact with Me!
         </button>
         {!currentAccount && (
