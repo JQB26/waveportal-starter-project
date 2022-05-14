@@ -6,6 +6,9 @@ import abi from "./utils/WavePortal.json";
 export default function App() {
 
   const [currentAccount, setCurrentAccount] = useState("");
+  const [interactionsTotalCount, setInteractionsTotalCount] = useState("");
+  const [interactionsAccountCount, setInteractionsAccountCount] = useState("");
+
 
   const contractAddress = "0x8711839C4b06c1d625Bb662424A5D31D9a8CE7d0";
   const contractABI = abi.abi;
@@ -52,6 +55,28 @@ export default function App() {
     }
   }
 
+  const getInfo = async () => {
+    try {
+      const { ethereum } = window;
+
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+
+        let count = await wavePortalContract.getTotalWaves();
+        setInteractionsTotalCount(count.toNumber());
+        console.log("Retrieved total wave count...", count.toNumber());
+
+        let accountCount = await wavePortalContract.getInteractions(currentAccount);
+        setInteractionsAccountCount(accountCount.toNumber());
+        console.log('ACCOUTN COUNT:', accountCount.toNumber());
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
   const wave = async () => {
     try {
       const { ethereum } = window;
@@ -62,8 +87,13 @@ export default function App() {
         const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
 
         let count = await wavePortalContract.getTotalWaves();
+        setInteractionsTotalCount(count.toNumber());
         console.log("Retrieved total wave count...", count.toNumber());
 
+        let accountCount = await wavePortalContract.getInteractions(currentAccount);
+        setInteractionsAccountCount(accountCount.toNumber());
+        console.log('ACCOUTN COUNT:', accountCount.toNumber());
+        
         const waveTxn = await wavePortalContract.wave();
         console.log('Mining...', waveTxn.hash);
 
@@ -71,8 +101,12 @@ export default function App() {
         console.log('Mined -- ', waveTxn.hash);
 
         count = await wavePortalContract.getTotalWaves();
+        setInteractionsTotalCount(count.toNumber());
         console.log("Retrieved total wave count...", count.toNumber());
 
+        accountCount = await wavePortalContract.getInteractions(currentAccount);
+        setInteractionsAccountCount(accountCount.toNumber());
+        console.log('ACCOUTN COUNT:', accountCount.toNumber());
       } else {
         console.log("Ethereum object doesn't exit!");
       }
@@ -85,6 +119,24 @@ export default function App() {
     checkIfWalletIsConnected();
   }, []);
 
+  useEffect(() => {
+    getInfo();
+  });
+
+  const interactionsInfo = () => {
+    if (currentAccount) {
+      return (
+        <div className="interactions">
+          <div className="interactionsInfo" id="total">
+            Total interactions:<br></br>{interactionsTotalCount}
+          </div>
+          <div className="interactionsInfo" id="userTotal">
+            Total interactions with your account:<br></br>{interactionsAccountCount}
+          </div>
+        </div>
+      )
+    }
+  }
 
   return (
     <div className="mainContainer">
@@ -99,9 +151,14 @@ export default function App() {
           Join us and get to the top!
         </div>
 
-        <button className="waveButton" onClick={wave}>
-          Interact with Me!
-        </button>
+        {currentAccount && (
+          <button className="waveButton" onClick={wave}>
+            Interact with Me!
+          </button>
+        )}
+
+        {interactionsInfo()}
+        
         {!currentAccount && (
           <button className="waveButton" onClick={connectWallet}>
             Connect wallet

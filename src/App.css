@@ -33,3 +33,15 @@
   border-radius: 5px;
   
 }
+
+.interactions {
+  background-color: #242526;
+  margin-top: 34px;
+  border: 2px solid whitesmoke;
+}
+
+.interactionsInfo {
+  margin: 8px;
+  text-align: center;
+  color: whitesmoke;
+}
