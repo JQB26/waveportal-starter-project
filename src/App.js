@@ -7,10 +7,14 @@ export default function App() {
 
   const [currentAccount, setCurrentAccount] = useState("");
   const [interactionsTotalCount, setInteractionsTotalCount] = useState("");
-  const [interactionsAccountCount, setInteractionsAccountCount] = useState("");
+  const [message, setMessage] = useState("");
+
+  const [allWaves, setAllWaves] = useState([]);
+
+  const [isLoading, setIsLoading] = useState(false);
 
 
-  const contractAddress = "0x8711839C4b06c1d625Bb662424A5D31D9a8CE7d0";
+  const contractAddress = "0x2Da3AA039733dc8Cf2e7BCF389fD645d154d88b9";
   const contractABI = abi.abi;
   
   const checkIfWalletIsConnected = async () => {
@@ -29,6 +33,7 @@ export default function App() {
         const account = accounts[0];
         console.log("Found an authorized account:", account);
         setCurrentAccount(account);
+        getAllWaves();
       } else {
         console.log("No authorized account found");
       }
@@ -50,6 +55,8 @@ export default function App() {
 
       console.log("Connected", accounts[0]);
       setCurrentAccount(accounts[0]);
+      getAllWaves();
+      getInfo();
     } catch (error) {
       console.log(error);
     }
@@ -67,10 +74,35 @@ export default function App() {
         let count = await wavePortalContract.getTotalWaves();
         setInteractionsTotalCount(count.toNumber());
         console.log("Retrieved total wave count...", count.toNumber());
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
-        let accountCount = await wavePortalContract.getInteractions(currentAccount);
-        setInteractionsAccountCount(accountCount.toNumber());
-        console.log('ACCOUTN COUNT:', accountCount.toNumber());
+  const getAllWaves = async () => {
+    try {
+      const { ethereum } = window;
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum);
+        const signer = provider.getSigner();
+        const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+
+        const waves = await wavePortalContract.getAllWaves();
+
+        let wavesCleaned = [];
+        waves.forEach(wave => {
+          wavesCleaned.push({
+            address: wave.waver,
+            timestamp: new Date(wave.timestamp * 1000),
+            message: wave.message
+          });
+        });
+
+        setAllWaves(wavesCleaned.reverse());
+        allWavesInfo();
+      } else {
+        console.log("Ethereum object doesn't exist");
       }
     } catch (error) {
       console.log(error);
@@ -85,54 +117,79 @@ export default function App() {
         const provider = new ethers.providers.Web3Provider(ethereum);
         const signer = provider.getSigner();
         const wavePortalContract = new ethers.Contract(contractAddress, contractABI, signer);
-
-        let count = await wavePortalContract.getTotalWaves();
-        setInteractionsTotalCount(count.toNumber());
-        console.log("Retrieved total wave count...", count.toNumber());
-
-        let accountCount = await wavePortalContract.getInteractions(currentAccount);
-        setInteractionsAccountCount(accountCount.toNumber());
-        console.log('ACCOUTN COUNT:', accountCount.toNumber());
         
-        const waveTxn = await wavePortalContract.wave();
+        const waveTxn = await wavePortalContract.wave(message);
         console.log('Mining...', waveTxn.hash);
+        setIsLoading(true);
 
         await waveTxn.wait();
         console.log('Mined -- ', waveTxn.hash);
+        setIsLoading(false);
+        setMessage("");
 
-        count = await wavePortalContract.getTotalWaves();
-        setInteractionsTotalCount(count.toNumber());
-        console.log("Retrieved total wave count...", count.toNumber());
-
-        accountCount = await wavePortalContract.getInteractions(currentAccount);
-        setInteractionsAccountCount(accountCount.toNumber());
-        console.log('ACCOUTN COUNT:', accountCount.toNumber());
+        getAllWaves();
+        getInfo();
       } else {
         console.log("Ethereum object doesn't exit!");
       }
     } catch (error) {
+      setIsLoading(false);
       console.log(error);
     }
   }
 
   useEffect(() => {
     checkIfWalletIsConnected();
-  }, []);
+  }, [])
 
-  useEffect(() => {
-    getInfo();
-  });
+  
 
-  const interactionsInfo = () => {
+  const Interacion = () => {
     if (currentAccount) {
       return (
-        <div className="interactions">
-          <div className="interactionsInfo" id="total">
-            Total interactions:<br></br>{interactionsTotalCount}
-          </div>
-          <div className="interactionsInfo" id="userTotal">
-            Total interactions with your account:<br></br>{interactionsAccountCount}
-          </div>
+        <button className="waveButton" onClick={wave}>
+          Interact with Me!
+        </button>
+      )
+    }
+  }
+
+  const allWavesInfo = () => {
+    if (currentAccount) {
+      return (
+        allWaves.map((wave, index) => {
+          return (
+            <div key={index} style={{backgroundColor: "whitesmoke", marginTop: "16px", padding: "8px"}}>
+              <div>Address: {wave.address}</div>
+              <div>Time: {wave.timestamp.toString()}</div>
+              <div>Message: {wave.message}</div>
+            </div>
+          )
+        })
+      )
+    }
+  }
+
+  const messageInput = () => {
+    if (currentAccount) {
+      return (
+        <form style={{backgroundColor: "whitesmoke", marginTop: "16px", padding: "8px"}}>
+          <input
+            placeholder="Your message"
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            style={{display: "block", width: "98%"}}
+          />
+        </form>
+      )
+    }
+  }
+
+  const loadingSpinner = () => {
+    if (isLoading) {
+      return (
+        <div className="loading-spinner">
         </div>
       )
     }
@@ -151,19 +208,24 @@ export default function App() {
           Join us and get to the top!
         </div>
 
+        {messageInput()}
+
         {currentAccount && (
           <button className="waveButton" onClick={wave}>
             Interact with Me!
+            {loadingSpinner()}
           </button>
         )}
-
-        {interactionsInfo()}
         
         {!currentAccount && (
           <button className="waveButton" onClick={connectWallet}>
             Connect wallet
           </button>
         )}
+
+        <div className="all-waves">
+          {allWavesInfo()}
+        </div>
       </div>
     </div>
   );
