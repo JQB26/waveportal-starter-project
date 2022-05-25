@@ -1,11 +1,14 @@
-# buildspace Wave Portal 👋 
+# Wave Portal 👋 based on buildspace tutorial
 
-### **Welcome!**
-To get started with this course, clone this repo and follow these commands:
+## The web application is available at:
+https://waveportal-starter-project-jqb26.vercel.app/
 
-1. Run `npm install` at the root of your directory
-2. Run `npm run start` to start the project
-3. Start coding!
+## Project info
+Wave Portal is a simple web3 application. It allows users to send a message and save it to the blockchain. All users can access and view sent messages (in order of newest).
 
-### **Questions?**
-Have some questions make sure you head over to your [buildspace Dashboard](https://app.buildspace.so/courses/CO02cf0f1c-f996-4f50-9669-cf945ca3fb0b) and link your Discord account so you can get access to helpful channels and your instructor!
+### Blockchain
+Hardhat project is available at:
+https://github.com/JQB26/my-wave-portal
+
+It uses the Goerli network, and smart contract can be found at:
+https://goerli.etherscan.io/address/0xb3e1112af72a8ecc2f0e5624a3374a31651ca80c
